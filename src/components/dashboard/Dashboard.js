@@ -1,4 +1,4 @@
-// src/components//dashboard/Dashboard.js
+// src/components/dashboard/Dashboard.js - FIXED VERSION
 import React, { useState } from 'react';
 import { Layout, Menu, Typography, Button, Avatar, Dropdown, Space } from 'antd';
 import { 
@@ -14,12 +14,19 @@ import {
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-// Import components (we'll create these)
+// Import components
 import DashboardHome from './DashboardHome';
 import ProductList from '../inventory/ProductList';
 import AddProduct from '../inventory/AddProduct';
+import StockAdjustment from '../inventory/StockAdjustment';
 import InventoryTransactions from '../inventory/InventoryTransactions';
 import PurchaseOrders from '../inventory/PurchaseOrders';
+import PurchaseOrderCreate from '../inventory/PurchaseOrderCreate';
+import CustomerList from '../customer/CustomerList';
+import SupplierList from '../suppliers/SupplierList';
+import Reports from '../reports/Reports';
+import Storefront from '../storefront/Storefront';
+import Settings from '../settings/Settings';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -74,12 +81,20 @@ const Dashboard = () => {
           label: 'Add Product',
         },
         {
+          key: '/inventory/stock-adjustment',
+          label: 'Stock Adjustment',
+        },
+        {
           key: '/inventory/transactions',
           label: 'Transactions',
         },
         {
           key: '/inventory/purchase-orders',
           label: 'Purchase Orders',
+        },
+        {
+          key: '/inventory/create-purchase-order',
+          label: 'Create PO',
         },
       ],
     },
@@ -99,6 +114,11 @@ const Dashboard = () => {
       ],
     },
     {
+      key: '/suppliers',
+      icon: <UserOutlined />,
+      label: 'Suppliers',
+    },
+    {
       key: '/reports',
       icon: <FileTextOutlined />,
       label: 'Reports',
@@ -107,6 +127,11 @@ const Dashboard = () => {
       key: '/storefront',
       icon: <ShopOutlined />,
       label: 'Storefront',
+    },
+    {
+      key: '/settings',
+      icon: <SettingOutlined />,
+      label: 'Settings',
     },
   ];
 
@@ -186,8 +211,15 @@ const Dashboard = () => {
             <Route path="/" element={<DashboardHome />} />
             <Route path="/inventory/products" element={<ProductList />} />
             <Route path="/inventory/add-product" element={<AddProduct />} />
+            <Route path="/inventory/stock-adjustment" element={<StockAdjustment />} />
             <Route path="/inventory/transactions" element={<InventoryTransactions />} />
             <Route path="/inventory/purchase-orders" element={<PurchaseOrders />} />
+            <Route path="/inventory/create-purchase-order" element={<PurchaseOrderCreate />} />
+            <Route path="/sales/customers" element={<CustomerList />} />
+            <Route path="/suppliers" element={<SupplierList />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/storefront" element={<Storefront />} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </Content>
       </Layout>
