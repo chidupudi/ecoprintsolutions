@@ -1,6 +1,6 @@
-// src/components/dashboard/Dashboard.js - FIXED VERSION
+// src/components/dashboard/Dashboard.js - UPDATED WITH CUSTOMER APPROVAL
 import React, { useState } from 'react';
-import { Layout, Menu, Typography, Button, Avatar, Dropdown, Space } from 'antd';
+import { Layout, Menu, Typography, Button, Avatar, Dropdown, Space, Badge } from 'antd';
 import { 
   DashboardOutlined, 
   ShoppingOutlined, 
@@ -9,7 +9,8 @@ import {
   SettingOutlined,
   UserOutlined,
   LogoutOutlined,
-  ShopOutlined
+  ShopOutlined,
+  CheckCircleOutlined
 } from '@ant-design/icons';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -23,6 +24,7 @@ import InventoryTransactions from '../inventory/InventoryTransactions';
 import PurchaseOrders from '../inventory/PurchaseOrders';
 import PurchaseOrderCreate from '../inventory/PurchaseOrderCreate';
 import CustomerList from '../customer/CustomerList';
+import WholesaleApprovals from '../customer/WholesaleApprovals'; // Updated import
 import SupplierList from '../suppliers/SupplierList';
 import Reports from '../reports/Reports';
 import Storefront from '../storefront/Storefront';
@@ -109,7 +111,11 @@ const Dashboard = () => {
         },
         {
           key: '/sales/customers',
-          label: 'Customers',
+          label: 'All Customers',
+        },
+        {
+          key: '/sales/customer-approval',
+          label: 'Wholesale Approvals',
         },
       ],
     },
@@ -216,6 +222,7 @@ const Dashboard = () => {
             <Route path="/inventory/purchase-orders" element={<PurchaseOrders />} />
             <Route path="/inventory/create-purchase-order" element={<PurchaseOrderCreate />} />
             <Route path="/sales/customers" element={<CustomerList />} />
+            <Route path="/sales/customer-approval" element={<WholesaleApprovals />} />
             <Route path="/suppliers" element={<SupplierList />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/storefront" element={<Storefront />} />

@@ -1,8 +1,8 @@
-// src/customer/pages/CustomerHome.js
+// src/components/customer/pages/CustomerHome.js - FIXED WITH DEBUG
 import React, { useState, useEffect } from 'react';
 import { 
   Card, Row, Col, Button, Typography, Space, Tag, 
-  Carousel, Statistic, Input 
+  Carousel, Statistic, Input, Alert, Spin 
 } from 'antd';
 import { 
   ShoppingCartOutlined, PrinterOutlined, 
@@ -19,6 +19,8 @@ const CustomerHome = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [debugInfo, setDebugInfo] = useState('');
   const navigate = useNavigate();
   const { addToCart } = useCart();
 
@@ -27,24 +29,72 @@ const CustomerHome = () => {
   }, []);
 
   const loadHomeData = async () => {
+    console.log('🔄 Starting to load home data...');
+    setDebugInfo('Loading data...');
+    
     try {
       setLoading(true);
+      setError(null);
       
-      // Load featured products (products with good stock)
-      const products = await dbService.queryDocuments('products', [
-        { field: 'isActive', operator: '==', value: true },
-        { field: 'currentStock', operator: '>', value: 5 }
-      ], 'currentStock', 'desc', 8);
+      // Debug: Test basic connection
+      console.log('🔗 Testing database connection...');
       
-      // Load categories
-      const cats = await dbService.queryDocuments('categories', [
-        { field: 'isActive', operator: '==', value: true }
-      ]);
+      // Load categories first
+      console.log('📂 Loading categories...');
+      setDebugInfo('Loading categories...');
       
-      setFeaturedProducts(products);
+      const cats = await dbService.getAll('categories');
+      console.log('📂 Categories loaded:', cats.length, cats);
       setCategories(cats);
+      
+      if (cats.length === 0) {
+        console.warn('⚠️ No categories found in database');
+        setDebugInfo('No categories found');
+      }
+      
+      // Load all products first to debug
+      console.log('📦 Loading all products...');
+      setDebugInfo('Loading all products...');
+      
+      const allProducts = await dbService.getAll('products');
+      console.log('📦 All products loaded:', allProducts.length, allProducts);
+      
+      if (allProducts.length === 0) {
+        console.warn('⚠️ No products found in database');
+        setError('No products found in database. Please add some products first.');
+        setDebugInfo('No products found in database');
+        setLoading(false);
+        return;
+      }
+      
+      // Filter active products with stock
+      const activeProducts = allProducts.filter(product => {
+        const isActive = product.isActive === true;
+        const hasStock = product.currentStock > 0;
+        console.log(`Product ${product.name}: active=${isActive}, stock=${product.currentStock}, hasStock=${hasStock}`);
+        return isActive && hasStock;
+      });
+      
+      console.log('✅ Active products with stock:', activeProducts.length, activeProducts);
+      
+      if (activeProducts.length === 0) {
+        console.warn('⚠️ No active products with stock found');
+        setError('No products available. All products are either inactive or out of stock.');
+        setDebugInfo('No active products with stock');
+      }
+      
+      // Sort by stock level (highest first) and take first 8
+      const sortedProducts = activeProducts.sort((a, b) => b.currentStock - a.currentStock);
+      const featured = sortedProducts.slice(0, 8);
+      
+      console.log('⭐ Featured products:', featured.length, featured);
+      setFeaturedProducts(featured);
+      setDebugInfo(`Loaded ${featured.length} featured products, ${cats.length} categories`);
+      
     } catch (error) {
-      console.error('Error loading home data:', error);
+      console.error('❌ Error loading home data:', error);
+      setError('Failed to load data: ' + error.message);
+      setDebugInfo('Error: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -120,8 +170,50 @@ const CustomerHome = () => {
     </Card>
   );
 
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '50vh',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        <Spin size="large" />
+        <Text>{debugInfo}</Text>
+      </div>
+    );
+  }
+
   return (
     <div>
+      {/* Debug Info */}
+      {process.env.NODE_ENV === 'development' && (
+        <Alert
+          message="Debug Info"
+          description={`${debugInfo} | Products: ${featuredProducts.length} | Categories: ${categories.length}`}
+          type="info"
+          style={{ margin: '16px 20px' }}
+          closable
+        />
+      )}
+
+      {/* Error Alert */}
+      {error && (
+        <Alert
+          message="Error Loading Data"
+          description={error}
+          type="error"
+          style={{ margin: '16px 20px' }}
+          action={
+            <Button size="small" onClick={loadHomeData}>
+              Retry
+            </Button>
+          }
+        />
+      )}
+
       {/* Hero Section */}
       <div className="hero-section">
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
@@ -201,58 +293,69 @@ const CustomerHome = () => {
       </div>
 
       {/* Categories Section */}
-      <div style={{ background: '#f5f5f5', padding: '80px 20px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '50px' }}>
-            <Title level={2}>Shop by Category</Title>
-            <Paragraph type="secondary">
-              Find exactly what you need for your printer
-            </Paragraph>
-          </div>
-          
-          <Row gutter={[24, 24]}>
-            {categories.map(category => (
-              <Col xs={24} sm={12} md={8} key={category.id}>
-                <CategoryCard category={category} />
-              </Col>
-            ))}
-          </Row>
-        </div>
-      </div>
-
-      {/* Featured Products Section */}
-      <div style={{ background: 'white', padding: '80px 20px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            marginBottom: '50px' 
-          }}>
-            <div>
-              <Title level={2}>Featured Products</Title>
+      {categories.length > 0 && (
+        <div style={{ background: '#f5f5f5', padding: '80px 20px' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '50px' }}>
+              <Title level={2}>Shop by Category</Title>
               <Paragraph type="secondary">
-                Best selling items this month
+                Find exactly what you need for your printer
               </Paragraph>
             </div>
-            <Button 
-              type="primary" 
-              icon={<ArrowRightOutlined />}
-              onClick={() => navigate('/products')}
-            >
-              View All Products
-            </Button>
+            
+            <Row gutter={[24, 24]}>
+              {categories.map(category => (
+                <Col xs={24} sm={12} md={8} key={category.id}>
+                  <CategoryCard category={category} />
+                </Col>
+              ))}
+            </Row>
           </div>
-          
-          <Row gutter={[24, 24]}>
-            {featuredProducts.slice(0, 8).map(product => (
-              <Col xs={24} sm={12} md={8} lg={6} key={product.id}>
-                <ProductCard product={product} />
-              </Col>
-            ))}
-          </Row>
         </div>
-      </div>
+      )}
+
+      {/* Featured Products Section */}
+      {featuredProducts.length > 0 ? (
+        <div style={{ background: 'white', padding: '80px 20px' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              marginBottom: '50px' 
+            }}>
+              <div>
+                <Title level={2}>Featured Products</Title>
+                <Paragraph type="secondary">
+                  Best selling items this month
+                </Paragraph>
+              </div>
+              <Button 
+                type="primary" 
+                icon={<ArrowRightOutlined />}
+                onClick={() => navigate('/products')}
+              >
+                View All Products
+              </Button>
+            </div>
+            
+            <Row gutter={[24, 24]}>
+              {featuredProducts.slice(0, 8).map(product => (
+                <Col xs={24} sm={12} md={8} lg={6} key={product.id}>
+                  <ProductCard product={product} />
+                </Col>
+              ))}
+            </Row>
+          </div>
+        </div>
+      ) : (
+        <div style={{ background: 'white', padding: '80px 20px', textAlign: 'center' }}>
+          <Title level={3}>No Products Available</Title>
+          <Paragraph>
+            Products will appear here once they are added to the inventory.
+          </Paragraph>
+        </div>
+      )}
 
       {/* Features Section */}
       <div style={{ background: '#001529', color: 'white', padding: '80px 20px' }}>

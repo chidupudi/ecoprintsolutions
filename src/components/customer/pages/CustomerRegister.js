@@ -1,12 +1,12 @@
-// src/customer/pages/CustomerRegister.js
+// src/customer/pages/CustomerRegister.js - UPDATED WITH ADMIN APPROVAL
 import React, { useState } from 'react';
 import { 
   Form, Input, Button, Card, message, Typography, 
-  Select, Checkbox, Divider 
+  Select, Checkbox, Divider, Alert 
 } from 'antd';
 import { 
   UserOutlined, LockOutlined, MailOutlined, 
-  PhoneOutlined, GoogleOutlined 
+  PhoneOutlined, GoogleOutlined, InfoCircleOutlined 
 } from '@ant-design/icons';
 import { useAuth } from '../../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -16,6 +16,7 @@ const { Option } = Select;
 
 const CustomerRegister = () => {
   const [loading, setLoading] = useState(false);
+  const [customerType, setCustomerType] = useState('retail');
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -31,12 +32,22 @@ const CustomerRegister = () => {
         displayName: values.firstName + ' ' + values.lastName,
         customerType: values.customerType,
         phone: values.phone,
-        role: values.customerType === 'wholesale' ? 'customer_wholesale' : 'customer_retail'
+        role: values.customerType === 'wholesale' ? 'customer_wholesale' : 'customer_retail',
+        // For wholesale customers, set pending approval status
+        isApproved: values.customerType === 'retail', // Retail customers are auto-approved
+        approvalStatus: values.customerType === 'wholesale' ? 'pending' : 'approved',
+        requestedAt: new Date()
       };
 
       await register(values.email, values.password, userData);
-      message.success('Account created successfully! Welcome to Eco Print Solutions!');
-      navigate('/');
+      
+      if (values.customerType === 'wholesale') {
+        message.success('Account created successfully! Your wholesale account is pending admin approval. You will be notified once approved.');
+        navigate('/login');
+      } else {
+        message.success('Account created successfully! Welcome to Eco Print Solutions!');
+        navigate('/');
+      }
     } catch (error) {
       message.error('Registration failed: ' + error.message);
     } finally {
@@ -125,12 +136,12 @@ const CustomerRegister = () => {
             initialValue="retail"
             rules={[{ required: true, message: 'Please select customer type!' }]}
           >
-            <Select>
+            <Select onChange={setCustomerType}>
               <Option value="retail">
                 <div>
                   <div style={{ fontWeight: 'bold' }}>Retail Customer</div>
                   <div style={{ fontSize: '12px', color: '#666' }}>
-                    For individual purchases
+                    For individual purchases • Instant access
                   </div>
                 </div>
               </Option>
@@ -138,12 +149,24 @@ const CustomerRegister = () => {
                 <div>
                   <div style={{ fontWeight: 'bold' }}>Wholesale Customer</div>
                   <div style={{ fontSize: '12px', color: '#666' }}>
-                    For bulk purchases and business
+                    For bulk purchases and business • Requires admin approval
                   </div>
                 </div>
               </Option>
             </Select>
           </Form.Item>
+
+          {/* Wholesale Customer Notice */}
+          {customerType === 'wholesale' && (
+            <Alert
+              message="Wholesale Account Information"
+              description="Wholesale accounts require admin approval. After registration, please wait for approval before you can access wholesale pricing and place orders. You'll receive an email notification once approved."
+              type="info"
+              icon={<InfoCircleOutlined />}
+              style={{ marginBottom: '16px' }}
+              showIcon
+            />
+          )}
 
           <Form.Item
             label="Password"
@@ -194,7 +217,7 @@ const CustomerRegister = () => {
               block
               size="large"
             >
-              Create Account
+              {customerType === 'wholesale' ? 'Create Account (Pending Approval)' : 'Create Account'}
             </Button>
           </Form.Item>
         </Form>

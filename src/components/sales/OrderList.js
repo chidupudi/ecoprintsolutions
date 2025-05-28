@@ -1,20 +1,20 @@
+// src/components/sales/OrderList.js
 import React, { useState, useEffect } from 'react';
 import { 
   Table, Button, Space, Tag, Card, Input, Select, message, 
-  Modal, Descriptions, Row, Col, Statistic
+  Modal, Descriptions, Timeline, Row, Col, Statistic
 } from 'antd';
 import { 
-  PlusOutlined, EyeOutlined, SearchOutlined,
-  CheckCircleOutlined, ClockCircleOutlined
+  EyeOutlined, SearchOutlined, FilterOutlined,
+  CheckCircleOutlined, ClockCircleOutlined, TruckOutlined
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
 import { dbService } from '../../services/dbService';
 import moment from 'moment';
 
 const { Search } = Input;
 const { Option } = Select;
 
-const PurchaseOrders = () => {
+const OrderList = () => {
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,23 +22,22 @@ const PurchaseOrders = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailsVisible, setDetailsVisible] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    loadPurchaseOrders();
+    loadOrders();
   }, []);
 
   useEffect(() => {
     filterOrders();
   }, [orders, searchText, statusFilter]);
 
-  const loadPurchaseOrders = async () => {
+  const loadOrders = async () => {
     try {
       setLoading(true);
-      const orderData = await dbService.queryDocuments('purchase_orders', [], 'purchaseDate', 'desc');
+      const orderData = await dbService.queryDocuments('sales_orders', [], 'orderDate', 'desc');
       setOrders(orderData);
     } catch (error) {
-      message.error('Failed to load purchase orders');
+      message.error('Failed to load orders');
     } finally {
       setLoading(false);
     }
@@ -50,7 +49,8 @@ const PurchaseOrders = () => {
     if (searchText) {
       filtered = filtered.filter(order =>
         order.id.toLowerCase().includes(searchText.toLowerCase()) ||
-        order.supplierName?.toLowerCase().includes(searchText.toLowerCase())
+        order.customerName?.toLowerCase().includes(searchText.toLowerCase()) ||
+        order.customerEmail?.toLowerCase().includes(searchText.toLowerCase())
       );
     }
 
@@ -63,12 +63,12 @@ const PurchaseOrders = () => {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      await dbService.update('purchase_orders', orderId, { 
+      await dbService.update('sales_orders', orderId, { 
         status: newStatus,
         updatedAt: new Date()
       });
       message.success('Order status updated successfully!');
-      loadPurchaseOrders();
+      loadOrders();
     } catch (error) {
       message.error('Failed to update order status');
     }
@@ -77,9 +77,9 @@ const PurchaseOrders = () => {
   const getStatusColor = (status) => {
     const colors = {
       pending: 'orange',
-      confirmed: 'blue',
+      processing: 'blue', 
       shipped: 'purple',
-      received: 'green',
+      delivered: 'green',
       cancelled: 'red'
     };
     return colors[status] || 'default';
@@ -87,21 +87,26 @@ const PurchaseOrders = () => {
 
   const columns = [
     {
-      title: 'PO ID',
+      title: 'Order ID',
       dataIndex: 'id',
       key: 'id',
       render: (id) => `#${id.slice(-8)}`,
       width: 120,
     },
     {
-      title: 'Supplier',
-      dataIndex: 'supplierName',
-      key: 'supplierName',
+      title: 'Customer',
+      key: 'customer',
+      render: (_, record) => (
+        <div>
+          <div>{record.customerName}</div>
+          <div style={{ fontSize: '12px', color: '#666' }}>{record.customerEmail}</div>
+        </div>
+      ),
     },
     {
       title: 'Date',
-      dataIndex: 'purchaseDate',
-      key: 'purchaseDate',
+      dataIndex: 'orderDate',
+      key: 'orderDate',
       render: (date) => moment(date?.toDate ? date.toDate() : date).format('DD/MM/YYYY'),
       width: 100,
     },
@@ -131,6 +136,17 @@ const PurchaseOrders = () => {
       width: 100,
     },
     {
+      title: 'Payment',
+      dataIndex: 'paymentStatus',
+      key: 'paymentStatus',
+      render: (status) => (
+        <Tag color={status === 'paid' ? 'green' : 'orange'}>
+          {status?.toUpperCase()}
+        </Tag>
+      ),
+      width: 100,
+    },
+    {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => (
@@ -151,9 +167,9 @@ const PurchaseOrders = () => {
             style={{ width: 120 }}
           >
             <Option value="pending">Pending</Option>
-            <Option value="confirmed">Confirmed</Option>
+            <Option value="processing">Processing</Option>
             <Option value="shipped">Shipped</Option>
-            <Option value="received">Received</Option>
+            <Option value="delivered">Delivered</Option>
             <Option value="cancelled">Cancelled</Option>
           </Select>
         </Space>
@@ -165,23 +181,16 @@ const PurchaseOrders = () => {
   const orderStats = {
     total: orders.length,
     pending: orders.filter(o => o.status === 'pending').length,
-    confirmed: orders.filter(o => o.status === 'confirmed').length,
-    received: orders.filter(o => o.status === 'received').length,
-    totalValue: orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0)
+    processing: orders.filter(o => o.status === 'processing').length,
+    delivered: orders.filter(o => o.status === 'delivered').length,
+    totalRevenue: orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0)
   };
 
   return (
     <div>
       <Card>
         <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0 }}>Purchase Orders</h2>
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />}
-            onClick={() => navigate('/admin/inventory/create-purchase-order')}
-          >
-            Create Purchase Order
-          </Button>
+          <h2 style={{ margin: 0 }}>Sales Orders</h2>
         </div>
 
         {/* Order Statistics */}
@@ -198,12 +207,12 @@ const PurchaseOrders = () => {
           </Col>
           <Col xs={12} sm={6}>
             <Card size="small">
-              <Statistic title="Confirmed" value={orderStats.confirmed} />
+              <Statistic title="Processing" value={orderStats.processing} />
             </Card>
           </Col>
           <Col xs={12} sm={6}>
             <Card size="small">
-              <Statistic title="Total Value" value={orderStats.totalValue} precision={2} prefix="₹" />
+              <Statistic title="Revenue" value={orderStats.totalRevenue} precision={2} prefix="₹" />
             </Card>
           </Col>
         </Row>
@@ -227,9 +236,9 @@ const PurchaseOrders = () => {
           >
             <Option value="all">All Status</Option>
             <Option value="pending">Pending</Option>
-            <Option value="confirmed">Confirmed</Option>
+            <Option value="processing">Processing</Option>
             <Option value="shipped">Shipped</Option>
-            <Option value="received">Received</Option>
+            <Option value="delivered">Delivered</Option>
             <Option value="cancelled">Cancelled</Option>
           </Select>
         </div>
@@ -252,7 +261,7 @@ const PurchaseOrders = () => {
 
       {/* Order Details Modal */}
       <Modal
-        title={`Purchase Order Details - #${selectedOrder?.id?.slice(-8) || ''}`}
+        title={`Order Details - #${selectedOrder?.id?.slice(-8) || ''}`}
         visible={detailsVisible}
         onCancel={() => setDetailsVisible(false)}
         width={800}
@@ -261,25 +270,27 @@ const PurchaseOrders = () => {
         {selectedOrder && (
           <div>
             <Descriptions bordered size="small">
-              <Descriptions.Item label="Supplier" span={2}>
-                {selectedOrder.supplierName}
+              <Descriptions.Item label="Customer" span={2}>
+                {selectedOrder.customerName}
               </Descriptions.Item>
-              <Descriptions.Item label="Purchase Date" span={2}>
-                {moment(selectedOrder.purchaseDate?.toDate ? selectedOrder.purchaseDate.toDate() : selectedOrder.purchaseDate).format('DD/MM/YYYY')}
+              <Descriptions.Item label="Email">
+                {selectedOrder.customerEmail}
+              </Descriptions.Item>
+              <Descriptions.Item label="Order Date" span={2}>
+                {moment(selectedOrder.orderDate?.toDate ? selectedOrder.orderDate.toDate() : selectedOrder.orderDate).format('DD/MM/YYYY HH:mm')}
               </Descriptions.Item>
               <Descriptions.Item label="Status">
                 <Tag color={getStatusColor(selectedOrder.status)}>
                   {selectedOrder.status?.toUpperCase()}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="Expected Delivery" span={2}>
-                {selectedOrder.expectedDelivery ? 
-                  moment(selectedOrder.expectedDelivery?.toDate ? selectedOrder.expectedDelivery.toDate() : selectedOrder.expectedDelivery).format('DD/MM/YYYY') : 
-                  'Not specified'
-                }
+              <Descriptions.Item label="Payment Method" span={2}>
+                {selectedOrder.paymentMethod}
               </Descriptions.Item>
-              <Descriptions.Item label="Created By">
-                {selectedOrder.createdBy || 'Unknown'}
+              <Descriptions.Item label="Payment Status">
+                <Tag color={selectedOrder.paymentStatus === 'paid' ? 'green' : 'orange'}>
+                  {selectedOrder.paymentStatus?.toUpperCase()}
+                </Tag>
               </Descriptions.Item>
             </Descriptions>
 
@@ -295,6 +306,11 @@ const PurchaseOrders = () => {
                     title: 'Product',
                     dataIndex: 'productName',
                     key: 'productName',
+                  },
+                  {
+                    title: 'SKU',
+                    dataIndex: 'sku',
+                    key: 'sku',
                   },
                   {
                     title: 'Quantity',
@@ -317,18 +333,25 @@ const PurchaseOrders = () => {
               />
             </div>
 
-            {/* Notes */}
-            {selectedOrder.notes && (
+            {/* Shipping Address */}
+            {selectedOrder.shippingAddress && (
               <div style={{ marginTop: 16 }}>
-                <h4>Notes</h4>
-                <p>{selectedOrder.notes}</p>
+                <h4>Shipping Address</h4>
+                <p>
+                  {selectedOrder.shippingAddress.firstName} {selectedOrder.shippingAddress.lastName}<br />
+                  {selectedOrder.shippingAddress.address}<br />
+                  {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} - {selectedOrder.shippingAddress.pincode}
+                </p>
               </div>
             )}
 
             {/* Order Summary */}
             <div style={{ marginTop: 16, textAlign: 'right' }}>
+              <div>Subtotal: ₹{selectedOrder.subtotal?.toFixed(2)}</div>
+              <div>Tax: ₹{selectedOrder.tax?.toFixed(2)}</div>
+              <div>Shipping: ₹{selectedOrder.shippingFee?.toFixed(2) || '0.00'}</div>
               <div style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                Total Amount: ₹{selectedOrder.totalAmount?.toFixed(2)}
+                Total: ₹{selectedOrder.totalAmount?.toFixed(2)}
               </div>
             </div>
           </div>
@@ -338,4 +361,4 @@ const PurchaseOrders = () => {
   );
 };
 
-export default PurchaseOrders;
+export default OrderList;

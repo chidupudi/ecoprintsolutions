@@ -25,6 +25,12 @@ export const initializeDatabase = async () => {
         name: "Drums",
         description: "Printer drums and imaging units",
         isActive: true
+      },
+       {
+        id: "toners",
+        name: "Toners",
+        description: "Laser printer toners",
+        isActive: true
       }
     ];
 
@@ -37,7 +43,114 @@ export const initializeDatabase = async () => {
     }
 
     // 2. Create Sample Products
-    const products = [
+    const products =  [     // Cartridges
+      {
+        name: "HP 12A Cartridge (Q2612A)",
+        category: "cartridges",
+        compatibility: ["HP LaserJet 1010", "HP LaserJet 1012", "HP LaserJet 1015"],
+        sku: "CART_HP12A",
+        description: "Compatible cartridge for HP 12A. High quality print output with 2000 page yield.",
+        retailPrice: 450,
+        wholesalePrice: 380,
+        costPrice: 320,
+        currentStock: 25,
+        minStockLevel: 5,
+        maxStockLevel: 100,
+        imageUrl: "",
+        isActive: true,
+        specifications: {
+          color: "Black",
+          pageYield: "2000 pages",
+          brand: "Compatible",
+          type: "Laser Cartridge"
+        }
+      },
+      {
+        name: "Canon 047 Cartridge",
+        category: "cartridges",
+        compatibility: ["Canon LBP112", "Canon LBP113w", "Canon MF113w"],
+        sku: "CART_CAN047",
+        description: "Compatible cartridge for Canon 047 printers. Reliable performance guaranteed.",
+        retailPrice: 520,
+        wholesalePrice: 440,
+        costPrice: 360,
+        currentStock: 20,
+        minStockLevel: 5,
+        maxStockLevel: 75,
+        imageUrl: "",
+        isActive: true,
+        specifications: {
+          color: "Black",
+          pageYield: "1600 pages",
+          brand: "Compatible",
+          type: "Laser Cartridge"
+        }
+      },
+      {
+        name: "HP 88A Cartridge (CC388A)",
+        category: "cartridges", 
+        compatibility: ["HP LaserJet P1007", "HP LaserJet P1008", "HP LaserJet M1136"],
+        sku: "CART_HP88A",
+        description: "High quality compatible cartridge for HP 88A with excellent print quality.",
+        retailPrice: 580,
+        wholesalePrice: 490,
+        costPrice: 410,
+        currentStock: 18,
+        minStockLevel: 4,
+        maxStockLevel: 80,
+        imageUrl: "",
+        isActive: true,
+        specifications: {
+          color: "Black",
+          pageYield: "1500 pages",
+          brand: "Compatible",
+          type: "Laser Cartridge"
+        }
+      },
+
+      // Inks
+      {
+        name: "HP 305 Black Ink Cartridge",
+        category: "inks",
+        compatibility: ["HP DeskJet 2710", "HP DeskJet 2720", "HP DeskJet 4100"],
+        sku: "INK_HP305_BK",
+        description: "Original HP 305 Black Ink Cartridge for crisp text printing.",
+        retailPrice: 890,
+        wholesalePrice: 750,
+        costPrice: 620,
+        currentStock: 30,
+        minStockLevel: 8,
+        maxStockLevel: 80,
+        imageUrl: "",
+        isActive: true,
+        specifications: {
+          color: "Black",
+          pageYield: "120 pages",
+          brand: "HP Original",
+          type: "Inkjet Cartridge"
+        }
+      },
+      {
+        name: "HP 305 Color Ink Cartridge",
+        category: "inks",
+        compatibility: ["HP DeskJet 2710", "HP DeskJet 2720", "HP DeskJet 4100"],
+        sku: "INK_HP305_CLR",
+        description: "Original HP 305 Color Ink Cartridge for vibrant color printing.",
+        retailPrice: 1200,
+        wholesalePrice: 1020,
+        costPrice: 850,
+        currentStock: 25,
+        minStockLevel: 6,
+        maxStockLevel: 60,
+        imageUrl: "",
+        isActive: true,
+        specifications: {
+          color: "Tri-Color (CMY)",
+          pageYield: "100 pages",
+          brand: "HP Original",
+          type: "Inkjet Cartridge"
+        }
+      },
       {
         name: "12A Cartridge",
         category: "cartridges",
