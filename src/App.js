@@ -1,3 +1,4 @@
+// src/App.js - FIXED VERSION
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
@@ -31,7 +32,7 @@ function App() {
                 <Route 
                   path="/admin/*" 
                   element={
-                    <PrivateRoute requireAdmin={true}>
+                    <PrivateRoute adminOnly={true}>
                       <Dashboard />
                     </PrivateRoute>
                   } 

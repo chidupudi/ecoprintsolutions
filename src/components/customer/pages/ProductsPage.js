@@ -1,4 +1,4 @@
-// src/customer/pages/ProductsPage.js
+// src/components/customer/pages/ProductsPage.js - FIXED VERSION
 import React, { useState, useEffect } from 'react';
 import { 
   Card, Row, Col, Button, Tag, Input, Select, Pagination, 
@@ -48,9 +48,19 @@ const ProductsPage = () => {
       setFilters(prev => ({ ...prev, search: searchQuery }));
     }
     if (category) {
-      setFilters(prev => ({ ...prev, category }));
+      // Find category by name or id
+      const foundCategory = categories.find(cat => 
+        cat.id === category || 
+        cat.name.toLowerCase() === category.toLowerCase()
+      );
+      if (foundCategory) {
+        setFilters(prev => ({ ...prev, category: foundCategory.id }));
+      } else {
+        // Try to match by category name directly
+        setFilters(prev => ({ ...prev, category: category }));
+      }
     }
-  }, [searchParams, category]);
+  }, [searchParams, category, categories]);
 
   useEffect(() => {
     filterProducts();
@@ -62,6 +72,7 @@ const ProductsPage = () => {
       const productData = await dbService.queryDocuments('products', [
         { field: 'isActive', operator: '==', value: true }
       ]);
+      console.log('Loaded products:', productData);
       setProducts(productData);
     } catch (error) {
       console.error('Error loading products:', error);
@@ -75,6 +86,7 @@ const ProductsPage = () => {
       const categoryData = await dbService.queryDocuments('categories', [
         { field: 'isActive', operator: '==', value: true }
       ]);
+      console.log('Loaded categories:', categoryData);
       setCategories(categoryData);
     } catch (error) {
       console.error('Error loading categories:', error);
@@ -83,20 +95,33 @@ const ProductsPage = () => {
 
   const filterProducts = () => {
     let filtered = products;
+    console.log('Filtering products:', { products: products.length, filters });
 
     // Search filter
     if (filters.search) {
       filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        product.description.toLowerCase().includes(filters.search.toLowerCase()) ||
-        product.sku.toLowerCase().includes(filters.search.toLowerCase()) ||
+        product.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        product.description?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        product.sku?.toLowerCase().includes(filters.search.toLowerCase()) ||
         (product.compatibility && product.compatibility.join(' ').toLowerCase().includes(filters.search.toLowerCase()))
       );
     }
 
     // Category filter
     if (filters.category !== 'all') {
-      filtered = filtered.filter(product => product.category === filters.category);
+      filtered = filtered.filter(product => {
+        // Try exact match first
+        if (product.category === filters.category) return true;
+        
+        // Try to find category by name
+        const categoryObj = categories.find(cat => cat.id === filters.category);
+        if (categoryObj && product.category === categoryObj.name) return true;
+        
+        // Try case-insensitive match
+        if (product.category?.toLowerCase() === filters.category?.toLowerCase()) return true;
+        
+        return false;
+      });
     }
 
     // Price range filter
@@ -110,11 +135,13 @@ const ProductsPage = () => {
       filtered = filtered.filter(product => product.currentStock > 0);
     }
 
+    console.log('Filtered products:', filtered.length);
     setFilteredProducts(filtered);
     setCurrentPage(1);
   };
 
   const handleFilterChange = (key, value) => {
+    console.log('Filter change:', key, value);
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
@@ -242,6 +269,30 @@ const ProductsPage = () => {
     currentPage * pageSize
   );
 
+  const getCurrentCategoryName = () => {
+    if (category) {
+      const foundCategory = categories.find(cat => 
+        cat.id === category || 
+        cat.name.toLowerCase() === category.toLowerCase()
+      );
+      return foundCategory ? foundCategory.name : category.charAt(0).toUpperCase() + category.slice(1);
+    }
+    return 'All Products';
+  };
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '50vh' 
+      }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: '20px', minHeight: 'calc(100vh - 64px)' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -249,10 +300,7 @@ const ProductsPage = () => {
         {/* Header */}
         <div style={{ marginBottom: '24px' }}>
           <Title level={2}>
-            {category ? 
-              categories.find(c => c.id === category)?.name || 'Products' : 
-              'All Products'
-            }
+            {getCurrentCategoryName()}
           </Title>
           <Text type="secondary">
             {filteredProducts.length} products found
@@ -367,11 +415,7 @@ const ProductsPage = () => {
             </div>
 
             {/* Products Grid/List */}
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: '50px' }}>
-                <Spin size="large" />
-              </div>
-            ) : filteredProducts.length === 0 ? (
+            {filteredProducts.length === 0 ? (
               <Empty 
                 description="No products found"
                 style={{ margin: '50px 0' }}
@@ -395,19 +439,21 @@ const ProductsPage = () => {
                 )}
 
                 {/* Pagination */}
-                <div style={{ textAlign: 'center', marginTop: '40px' }}>
-                  <Pagination
-                    current={currentPage}
-                    pageSize={pageSize}
-                    total={filteredProducts.length}
-                    onChange={setCurrentPage}
-                    showSizeChanger={false}
-                    showQuickJumper
-                    showTotal={(total, range) => 
-                      `${range[0]}-${range[1]} of ${total} products`
-                    }
-                  />
-                </div>
+                {filteredProducts.length > pageSize && (
+                  <div style={{ textAlign: 'center', marginTop: '40px' }}>
+                    <Pagination
+                      current={currentPage}
+                      pageSize={pageSize}
+                      total={filteredProducts.length}
+                      onChange={setCurrentPage}
+                      showSizeChanger={false}
+                      showQuickJumper
+                      showTotal={(total, range) => 
+                        `${range[0]}-${range[1]} of ${total} products`
+                      }
+                    />
+                  </div>
+                )}
               </>
             )}
           </Col>

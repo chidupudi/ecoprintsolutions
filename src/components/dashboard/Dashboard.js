@@ -1,6 +1,6 @@
-// src/components/dashboard/Dashboard.js - UPDATED WITH CUSTOMER APPROVAL
+// src/components/dashboard/Dashboard.js - FIXED VERSION
 import React, { useState } from 'react';
-import { Layout, Menu, Typography, Button, Avatar, Dropdown, Space, Badge } from 'antd';
+import { Layout, Menu, Typography, Button, Avatar, Dropdown, Space } from 'antd';
 import { 
   DashboardOutlined, 
   ShoppingOutlined, 
@@ -24,7 +24,7 @@ import InventoryTransactions from '../inventory/InventoryTransactions';
 import PurchaseOrders from '../inventory/PurchaseOrders';
 import PurchaseOrderCreate from '../inventory/PurchaseOrderCreate';
 import CustomerList from '../customer/CustomerList';
-import WholesaleApprovals from '../customer/WholesaleApprovals'; // Updated import
+import WholesaleApprovals from '../customer/WholesaleApprovals';
 import SupplierList from '../suppliers/SupplierList';
 import Reports from '../reports/Reports';
 import Storefront from '../storefront/Storefront';
@@ -42,7 +42,7 @@ const Dashboard = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
+      navigate('/admin/login');
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -65,7 +65,7 @@ const Dashboard = () => {
 
   const menuItems = [
     {
-      key: '/',
+      key: '/admin',
       icon: <DashboardOutlined />,
       label: 'Dashboard',
     },
@@ -75,27 +75,27 @@ const Dashboard = () => {
       label: 'Inventory',
       children: [
         {
-          key: '/inventory/products',
+          key: '/admin/inventory/products',
           label: 'Products',
         },
         {
-          key: '/inventory/add-product',
+          key: '/admin/inventory/add-product',
           label: 'Add Product',
         },
         {
-          key: '/inventory/stock-adjustment',
+          key: '/admin/inventory/stock-adjustment',
           label: 'Stock Adjustment',
         },
         {
-          key: '/inventory/transactions',
+          key: '/admin/inventory/transactions',
           label: 'Transactions',
         },
         {
-          key: '/inventory/purchase-orders',
+          key: '/admin/inventory/purchase-orders',
           label: 'Purchase Orders',
         },
         {
-          key: '/inventory/create-purchase-order',
+          key: '/admin/inventory/create-purchase-order',
           label: 'Create PO',
         },
       ],
@@ -106,36 +106,32 @@ const Dashboard = () => {
       label: 'Sales',
       children: [
         {
-          key: '/sales/orders',
-          label: 'Orders',
-        },
-        {
-          key: '/sales/customers',
+          key: '/admin/sales/customers',
           label: 'All Customers',
         },
         {
-          key: '/sales/customer-approval',
+          key: '/admin/sales/customer-approval',
           label: 'Wholesale Approvals',
         },
       ],
     },
     {
-      key: '/suppliers',
+      key: '/admin/suppliers',
       icon: <UserOutlined />,
       label: 'Suppliers',
     },
     {
-      key: '/reports',
+      key: '/admin/reports',
       icon: <FileTextOutlined />,
       label: 'Reports',
     },
     {
-      key: '/storefront',
+      key: '/admin/storefront',
       icon: <ShopOutlined />,
       label: 'Storefront',
     },
     {
-      key: '/settings',
+      key: '/admin/settings',
       icon: <SettingOutlined />,
       label: 'Settings',
     },
@@ -143,6 +139,15 @@ const Dashboard = () => {
 
   const onMenuClick = ({ key }) => {
     navigate(key);
+  };
+
+  // Get the current path to match with menu
+  const getCurrentMenuKey = () => {
+    const path = location.pathname;
+    if (path === '/admin' || path === '/admin/') {
+      return '/admin';
+    }
+    return path;
   };
 
   return (
@@ -177,7 +182,7 @@ const Dashboard = () => {
         <Menu
           theme="light"
           mode="inline"
-          selectedKeys={[location.pathname]}
+          selectedKeys={[getCurrentMenuKey()]}
           items={menuItems}
           onClick={onMenuClick}
           style={{ borderRight: 0 }}

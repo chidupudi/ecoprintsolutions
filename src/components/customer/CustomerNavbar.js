@@ -1,4 +1,4 @@
-// src/customer/components/CustomerNavbar.js
+// src/components/customer/CustomerNavbar.js - FIXED VERSION
 import React, { useState } from 'react';
 import { 
   Layout, Menu, Badge, Avatar, Dropdown, Space, Input, 
@@ -23,7 +23,7 @@ const CustomerNavbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, userProfile, logout } = useAuth();
-  const { cartItems, getTotalItems } = useCart();
+  const { getTotalItems } = useCart();
 
   const handleSearch = (value) => {
     if (value.trim()) {
@@ -77,6 +77,10 @@ const CustomerNavbar = () => {
     {
       key: '/products/drums',
       label: 'Drums',
+    },
+    {
+      key: '/products/toners',
+      label: 'Toners',
     },
   ];
 

@@ -1,4 +1,4 @@
-// src/utils/initializeDatabase.js
+// src/utils/initializeDatabase.js - UPDATED VERSION
 import { collection, addDoc, doc, setDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
 
@@ -6,7 +6,7 @@ export const initializeDatabase = async () => {
   try {
     console.log("Initializing database...");
 
-    // 1. Create Categories
+    // 1. Create Categories with consistent structure
     const categories = [
       {
         id: "cartridges",
@@ -42,11 +42,12 @@ export const initializeDatabase = async () => {
       });
     }
 
-    // 2. Create Sample Products
-    const products =  [     // Cartridges
+    // 2. Create Sample Products with correct category references
+    const products = [
+      // Cartridges
       {
         name: "HP 12A Cartridge (Q2612A)",
-        category: "cartridges",
+        category: "cartridges", // Use category ID
         compatibility: ["HP LaserJet 1010", "HP LaserJet 1012", "HP LaserJet 1015"],
         sku: "CART_HP12A",
         description: "Compatible cartridge for HP 12A. High quality print output with 2000 page yield.",
@@ -107,6 +108,27 @@ export const initializeDatabase = async () => {
           type: "Laser Cartridge"
         }
       },
+      {
+        name: "HP 35A Cartridge (CB435A)",
+        category: "cartridges",
+        compatibility: ["HP LaserJet P1005", "HP LaserJet P1006"],
+        sku: "CART_HP35A",
+        description: "Compatible cartridge for HP 35A printers.",
+        retailPrice: 480,
+        wholesalePrice: 400,
+        costPrice: 330,
+        currentStock: 22,
+        minStockLevel: 5,
+        maxStockLevel: 90,
+        imageUrl: "",
+        isActive: true,
+        specifications: {
+          color: "Black",
+          pageYield: "1500 pages",
+          brand: "Compatible",
+          type: "Laser Cartridge"
+        }
+      },
 
       // Inks
       {
@@ -152,31 +174,34 @@ export const initializeDatabase = async () => {
         }
       },
       {
-        name: "12A Cartridge",
-        category: "cartridges",
-        compatibility: ["103", "303", "703"],
-        sku: "CART_12A",
-        description: "Compatible with HP 103/303/703 printers",
-        retailPrice: 450,
-        wholesalePrice: 380,
-        costPrice: 320,
-        currentStock: 25,
-        minStockLevel: 5,
-        maxStockLevel: 100,
+        name: "Canon PG-47 Black Ink",
+        category: "inks",
+        compatibility: ["Canon PIXMA E404", "Canon PIXMA E414"],
+        sku: "INK_CAN_PG47",
+        description: "Original Canon PG-47 Black Ink Cartridge.",
+        retailPrice: 950,
+        wholesalePrice: 800,
+        costPrice: 650,
+        currentStock: 28,
+        minStockLevel: 7,
+        maxStockLevel: 70,
         imageUrl: "",
         isActive: true,
         specifications: {
           color: "Black",
-          pageYield: "2000 pages",
-          brand: "Compatible"
+          pageYield: "180 pages",
+          brand: "Canon Original",
+          type: "Inkjet Cartridge"
         }
       },
+
+      // Drums
       {
-        name: "12A Drum",
+        name: "HP 12A Drum Unit",
         category: "drums", 
-        compatibility: ["103", "303", "703"],
-        sku: "DRUM_12A",
-        description: "Drum unit compatible with HP 103/303/703 printers",
+        compatibility: ["HP LaserJet 1010", "HP LaserJet 1012", "HP LaserJet 1015"],
+        sku: "DRUM_HP12A",
+        description: "Drum unit compatible with HP 12A printers. Long lasting and reliable.",
         retailPrice: 850,
         wholesalePrice: 720,
         costPrice: 600,
@@ -188,47 +213,73 @@ export const initializeDatabase = async () => {
         specifications: {
           color: "Black",
           pageYield: "12000 pages",
-          brand: "Compatible"
+          brand: "Compatible",
+          type: "Drum Unit"
         }
       },
       {
-        name: "HP 305 Black Ink",
-        category: "inks",
-        compatibility: ["DeskJet 2710", "DeskJet 2720", "DeskJet 4100"],
-        sku: "INK_HP305_BK",
-        description: "Original HP 305 Black Ink Cartridge",
-        retailPrice: 890,
-        wholesalePrice: 750,
-        costPrice: 620,
-        currentStock: 30,
-        minStockLevel: 8,
-        maxStockLevel: 80,
+        name: "Canon 047 Drum",
+        category: "drums",
+        compatibility: ["Canon LBP112", "Canon LBP113w"],
+        sku: "DRUM_CAN047",
+        description: "Compatible drum unit for Canon 047 series printers.",
+        retailPrice: 920,
+        wholesalePrice: 780,
+        costPrice: 650,
+        currentStock: 12,
+        minStockLevel: 3,
+        maxStockLevel: 40,
         imageUrl: "",
         isActive: true,
         specifications: {
           color: "Black",
-          pageYield: "120 pages",
-          brand: "HP Original"
+          pageYield: "10000 pages",
+          brand: "Compatible",
+          type: "Drum Unit"
         }
       },
+
+      // Toners
       {
-        name: "Canon 047 Cartridge",
-        category: "cartridges",
-        compatibility: ["LBP112", "LBP113w", "MF113w"],
-        sku: "CART_CAN047",
-        description: "Compatible cartridge for Canon 047 printers",
-        retailPrice: 520,
-        wholesalePrice: 440,
-        costPrice: 360,
+        name: "HP 26A Toner (CF226A)",
+        category: "toners",
+        compatibility: ["HP LaserJet Pro M402", "HP LaserJet Pro M426"],
+        sku: "TONER_HP26A",
+        description: "High quality compatible toner for HP 26A printers.",
+        retailPrice: 1200,
+        wholesalePrice: 1000,
+        costPrice: 850,
         currentStock: 20,
-        minStockLevel: 5,
-        maxStockLevel: 75,
+        minStockLevel: 4,
+        maxStockLevel: 60,
         imageUrl: "",
         isActive: true,
         specifications: {
           color: "Black",
-          pageYield: "1600 pages",
-          brand: "Compatible"
+          pageYield: "3100 pages",
+          brand: "Compatible",
+          type: "Toner Cartridge"
+        }
+      },
+      {
+        name: "Canon 337 Toner",
+        category: "toners",
+        compatibility: ["Canon MF211", "Canon MF212w", "Canon MF215"],
+        sku: "TONER_CAN337",
+        description: "Compatible toner cartridge for Canon 337 printers.",
+        retailPrice: 1350,
+        wholesalePrice: 1150,
+        costPrice: 950,
+        currentStock: 18,
+        minStockLevel: 4,
+        maxStockLevel: 55,
+        imageUrl: "",
+        isActive: true,
+        specifications: {
+          color: "Black",
+          pageYield: "2400 pages",
+          brand: "Compatible",
+          type: "Toner Cartridge"
         }
       }
     ];
@@ -299,7 +350,8 @@ export const initializeDatabase = async () => {
       },
       inventorySettings: {
         lowStockAlert: true,
-        autoReorderPoint: true
+        autoReorderPoint: true,
+        defaultMargin: 25
       }
     };
 
