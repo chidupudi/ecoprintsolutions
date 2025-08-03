@@ -2,6 +2,8 @@
 import { 
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   updateProfile,
   sendPasswordResetEmail,
@@ -10,7 +12,53 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "../config/firebase";
 
+const googleProvider = new GoogleAuthProvider();
+
 export const authService = {
+  // Google OAuth sign in for retail customers
+  async signInWithGoogle() {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      
+      // Check if user already exists
+      const existingProfile = await this.getUserProfile(user.uid).catch(() => null);
+      
+      if (!existingProfile) {
+        // Create new retail customer profile
+        const userDoc = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          profilePicture: user.photoURL,
+          role: "customer_retail",
+          customerType: "retail",
+          phone: "",
+          isApproved: true, // Retail customers are auto-approved
+          approvalStatus: 'approved',
+          requestedAt: null,
+          approvedAt: new Date(),
+          approvalReason: "",
+          isActive: true,
+          createdAt: new Date(),
+          lastLogin: new Date(),
+          signInMethod: 'google'
+        };
+        
+        await setDoc(doc(db, "users", user.uid), userDoc);
+      } else {
+        // Update last login
+        await setDoc(doc(db, "users", user.uid), {
+          lastLogin: new Date()
+        }, { merge: true });
+      }
+      
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Register new user
   async register(email, password, userData) {
     try {
@@ -30,6 +78,16 @@ export const authService = {
         role: userData.role || "customer_retail",
         customerType: userData.customerType || "retail",
         phone: userData.phone || "",
+        // Wholesale customer specific fields
+        ...(userData.customerType === 'wholesale' && {
+          businessName: userData.businessName,
+          gstNumber: userData.gstNumber,
+          businessAddress: userData.businessAddress,
+          businessPhone: userData.businessPhone,
+          businessType: userData.businessType,
+          yearEstablished: userData.yearEstablished,
+          expectedMonthlyVolume: userData.expectedMonthlyVolume,
+        }),
         // Approval system for wholesale customers
         isApproved: userData.customerType === 'retail', // Retail customers are auto-approved
         approvalStatus: userData.customerType === 'wholesale' ? 'pending' : 'approved',
@@ -38,7 +96,8 @@ export const authService = {
         approvalReason: "",
         isActive: true,
         createdAt: new Date(),
-        lastLogin: new Date()
+        lastLogin: new Date(),
+        signInMethod: 'email'
       };
       
       await setDoc(doc(db, "users", user.uid), userDoc);

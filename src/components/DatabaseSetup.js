@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { initializeDatabase } from '../utils/initializeDatabase';
 import { createAdminUser } from '../utils/createAdminUser';
+import { initSampleData } from '../utils/initSampleData';
 
 const DatabaseSetup = () => {
   const [loading, setLoading] = useState(false);
@@ -16,12 +17,27 @@ const DatabaseSetup = () => {
     setLoading(true);
     setMessage('Initializing database...');
     
-    const result = await initializeDatabase();
-    
-    if (result.success) {
-      setMessage('✅ Database initialized successfully with sample data!');
-    } else {
-      setMessage(`❌ Error: ${result.error}`);
+    try {
+      // First initialize basic database structure
+      const dbResult = await initializeDatabase();
+      
+      if (!dbResult.success) {
+        setMessage(`❌ Database initialization error: ${dbResult.error}`);
+        setLoading(false);
+        return;
+      }
+      
+      // Then add sample data
+      setMessage('Adding sample data...');
+      const sampleResult = await initSampleData();
+      
+      if (sampleResult.success) {
+        setMessage('✅ Database initialized successfully with sample data!');
+      } else {
+        setMessage(`❌ Sample data error: ${sampleResult.message}`);
+      }
+    } catch (error) {
+      setMessage(`❌ Error: ${error.message}`);
     }
     
     setLoading(false);

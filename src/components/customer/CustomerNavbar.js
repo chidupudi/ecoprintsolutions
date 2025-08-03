@@ -91,14 +91,14 @@ const CustomerNavbar = () => {
 
   return (
     <>
-      <Header className="customer-navbar" style={{ background: '#001529', padding: '0 20px' }}>
+      <Header className="customer-navbar" style={{ background: 'linear-gradient(135deg, #1890ff 0%, #001529 100%)', padding: '0 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '100%' }}>
           {/* Logo */}
           <div 
-            style={{ color: 'white', fontSize: '1.5rem', fontWeight: 'bold', cursor: 'pointer' }}
+            style={{ color: '#ffffff', fontSize: '1.5rem', fontWeight: 'bold', cursor: 'pointer', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
             onClick={() => navigate('/')}
           >
-            Eco Print Solutions
+            🖨️ Eco Print Solutions
           </div>
 
           {/* Desktop Menu */}
@@ -127,16 +127,18 @@ const CustomerNavbar = () => {
                 type="text"
                 icon={<SearchOutlined />}
                 onClick={() => setSearchVisible(!searchVisible)}
-                style={{ color: 'white' }}
+                style={{ color: '#ffffff', fontSize: '16px' }}
+                size="large"
               />
 
               {/* Cart */}
-              <Badge count={getTotalItems()} showZero={false}>
+              <Badge count={getTotalItems()} showZero={false} style={{ backgroundColor: '#52c41a' }}>
                 <Button
                   type="text"
                   icon={<ShoppingCartOutlined />}
                   onClick={() => navigate('/cart')}
-                  style={{ color: 'white' }}
+                  style={{ color: '#ffffff', fontSize: '16px' }}
+                  size="large"
                 />
               </Badge>
 
@@ -150,10 +152,20 @@ const CustomerNavbar = () => {
                 </Dropdown>
               ) : (
                 <Space>
-                  <Button type="link" onClick={() => navigate('/login')} style={{ color: 'white' }}>
+                  <Button 
+                    type="link" 
+                    onClick={() => navigate('/login')} 
+                    style={{ color: '#ffffff', fontWeight: '500' }}
+                    size="large"
+                  >
                     Login
                   </Button>
-                  <Button type="primary" onClick={() => navigate('/register')}>
+                  <Button 
+                    type="primary" 
+                    onClick={() => navigate('/register')}
+                    style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', fontWeight: '500' }}
+                    size="large"
+                  >
                     Sign Up
                   </Button>
                 </Space>
@@ -164,8 +176,9 @@ const CustomerNavbar = () => {
                 type="text"
                 icon={<MenuOutlined />}
                 onClick={() => setMobileMenuVisible(true)}
-                style={{ color: 'white', display: 'block' }}
+                style={{ color: '#ffffff', display: 'block', fontSize: '16px' }}
                 className="mobile-menu-button"
+                size="large"
               />
             </Space>
           </div>

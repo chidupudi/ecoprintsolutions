@@ -3,15 +3,35 @@ import React, { useState } from 'react';
 import { Form, Input, Button, Card, message, Typography, Divider, Alert } from 'antd';
 import { UserOutlined, LockOutlined, GoogleOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useAuth } from '../../../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { authService } from '../../../services/authService';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 
 const CustomerLogin = () => {
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showPendingMessage, setShowPendingMessage] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    setShowPendingMessage(false);
+    
+    try {
+      await authService.signInWithGoogle();
+      message.success('Successfully signed in with Google!');
+      // Redirect to products or home page for customers  
+      const redirectTo = location.state?.from?.pathname || '/';
+      navigate(redirectTo);
+    } catch (error) {
+      message.error('Google sign-in failed: ' + error.message);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const onFinish = async (values) => {
     setLoading(true);
@@ -21,8 +41,7 @@ const CustomerLogin = () => {
       const user = await login(values.email, values.password);
       
       // Get user profile to check approval status
-      const { getUserProfile } = await import('../../../services/authService');
-      const userProfile = await getUserProfile(user.uid);
+      const userProfile = await authService.getUserProfile(user.uid);
       
       // Check if wholesale customer is approved
       if (userProfile.customerType === 'wholesale' && userProfile.approvalStatus === 'pending') {
@@ -37,7 +56,9 @@ const CustomerLogin = () => {
       }
       
       message.success('Login successful!');
-      navigate('/');
+      // Redirect to products or home page for customers
+      const redirectTo = location.state?.from?.pathname || '/';
+      navigate(redirectTo);
     } catch (error) {
       message.error('Login failed: ' + error.message);
     } finally {
@@ -147,6 +168,8 @@ const CustomerLogin = () => {
               icon={<GoogleOutlined />}
               block
               style={{ height: '45px', marginBottom: '20px' }}
+              loading={googleLoading}
+              onClick={handleGoogleSignIn}
             >
               Continue with Google
             </Button>

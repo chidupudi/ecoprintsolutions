@@ -26,22 +26,20 @@ const PurchaseOrderCreate = () => {
     loadProducts();
   }, []);
 
+  // Fetch all suppliers, not just active ones
   const loadSuppliers = async () => {
     try {
-      const supplierData = await dbService.queryDocuments('suppliers', [
-        { field: 'isActive', operator: '==', value: true }
-      ]);
+      const supplierData = await dbService.getAll('suppliers');
       setSuppliers(supplierData);
     } catch (error) {
       message.error('Failed to load suppliers');
     }
   };
 
+  // Fetch all products, not just active ones
   const loadProducts = async () => {
     try {
-      const productData = await dbService.queryDocuments('products', [
-        { field: 'isActive', operator: '==', value: true }
-      ]);
+      const productData = await dbService.getAll('products');
       setProducts(productData);
     } catch (error) {
       message.error('Failed to load products');
@@ -71,11 +69,12 @@ const PurchaseOrderCreate = () => {
         
         if (field === 'productId') {
           const product = products.find(p => p.id === value);
+          
           if (product) {
             updatedItem.productName = product.name;
             updatedItem.unitPrice = product.costPrice || 0;
           }
-        }
+        } 
         
         if (field === 'quantity' || field === 'unitPrice') {
           updatedItem.totalPrice = updatedItem.quantity * updatedItem.unitPrice;
@@ -104,34 +103,33 @@ const PurchaseOrderCreate = () => {
     }
 
     setLoading(true);
-    try {
-      const purchaseOrderData = {
-        supplierId: values.supplierId,
-        supplierName: suppliers.find(s => s.id === values.supplierId)?.name,
-        items: orderItems.map(item => ({
-          productId: item.productId,
-          productName: item.productName,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.totalPrice
-        })),
-        totalAmount: calculateTotal(),
+    const purchaseOrderData = {
+      supplierId: values.supplierId,
+      supplierName: suppliers.find(s => s.id === values.supplierId)?.name,
+      items: orderItems.map(item => ({
+        productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
         purchaseDate: values.purchaseDate ? values.purchaseDate.toDate() : new Date(),
-        expectedDelivery: values.expectedDelivery ? values.expectedDelivery.toDate() : null,
-        status: 'pending',
-        paymentStatus: 'pending',
-        notes: values.notes || '',
-        createdBy: userProfile?.displayName || 'Unknown',
-        createdById: userProfile?.uid
-      };
+      })),
+      totalAmount: calculateTotal(),
+      purchaseDate: values.purchaseDate ? values.purchaseDate.toDate() : new Date(),
+      expectedDelivery: values.expectedDelivery ? values.expectedDelivery.toDate() : null,
+      status: 'pending',
+      paymentStatus: 'pending',
+      notes: values.notes || '',
+      createdBy: userProfile?.displayName || 'Unknown',
+      createdById: userProfile?.uid
+    };
 
+    try {
       const orderId = await dbService.create('purchase_orders', purchaseOrderData);
-      
       message.success(`Purchase Order #${orderId.slice(-6)} created successfully!`);
+      setSelectedSupplier(null);
       form.resetFields();
       setOrderItems([]);
-      setSelectedSupplier(null);
-
     } catch (error) {
       message.error('Failed to create purchase order: ' + error.message);
     } finally {
@@ -144,6 +142,7 @@ const PurchaseOrderCreate = () => {
       title: 'Product',
       dataIndex: 'productId',
       key: 'productId',
+      width: '40%',
       render: (value, record) => (
         <Select
           style={{ width: '100%' }}
@@ -156,6 +155,9 @@ const PurchaseOrderCreate = () => {
           {products.map(product => (
             <Option key={product.id} value={product.id}>
               {product.name} ({product.sku})
+              {product.isActive === false && (
+                <span style={{ color: 'red', marginLeft: 8 }}>[Inactive]</span>
+              )}
             </Option>
           ))}
         </Select>
@@ -242,6 +244,9 @@ const PurchaseOrderCreate = () => {
                   {suppliers.map(supplier => (
                     <Option key={supplier.id} value={supplier.id}>
                       {supplier.name} - {supplier.contactPerson}
+                      {supplier.isActive === false && (
+                        <span style={{ color: 'red', marginLeft: 8 }}>[Inactive]</span>
+                      )}
                     </Option>
                   ))}
                 </Select>
@@ -344,5 +349,6 @@ const PurchaseOrderCreate = () => {
     </div>
   );
 };
+
 
 export default PurchaseOrderCreate;

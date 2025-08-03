@@ -9,6 +9,7 @@ import {
   PhoneOutlined, GoogleOutlined, InfoCircleOutlined 
 } from '@ant-design/icons';
 import { useAuth } from '../../../context/AuthContext';
+import { authService } from '../../../services/authService';
 import { useNavigate, Link } from 'react-router-dom';
 
 const { Title, Text } = Typography;
@@ -16,9 +17,23 @@ const { Option } = Select;
 
 const CustomerRegister = () => {
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [customerType, setCustomerType] = useState('retail');
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      await authService.signInWithGoogle();
+      message.success('Successfully signed in with Google!');
+      navigate('/');
+    } catch (error) {
+      message.error('Google sign-in failed: ' + error.message);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const onFinish = async (values) => {
     if (values.password !== values.confirmPassword) {
@@ -33,10 +48,16 @@ const CustomerRegister = () => {
         customerType: values.customerType,
         phone: values.phone,
         role: values.customerType === 'wholesale' ? 'customer_wholesale' : 'customer_retail',
-        // For wholesale customers, set pending approval status
-        isApproved: values.customerType === 'retail', // Retail customers are auto-approved
-        approvalStatus: values.customerType === 'wholesale' ? 'pending' : 'approved',
-        requestedAt: new Date()
+        // Wholesale customer specific fields
+        ...(values.customerType === 'wholesale' && {
+          businessName: values.businessName,
+          gstNumber: values.gstNumber,
+          businessAddress: values.businessAddress,
+          businessPhone: values.businessPhone,
+          businessType: values.businessType,
+          yearEstablished: values.yearEstablished,
+          expectedMonthlyVolume: values.expectedMonthlyVolume,
+        })
       };
 
       await register(values.email, values.password, userData);
@@ -156,6 +177,97 @@ const CustomerRegister = () => {
             </Select>
           </Form.Item>
 
+          {/* Wholesale Customer Additional Fields */}
+          {customerType === 'wholesale' && (
+            <div style={{ marginBottom: '16px' }}>
+              <Form.Item
+                label="Business Name"
+                name="businessName"
+                rules={[{ required: true, message: 'Please enter your business name!' }]}
+              >
+                <Input placeholder="Your Business Name" />
+              </Form.Item>
+
+              <Form.Item
+                label="GST Number"
+                name="gstNumber"
+                rules={[
+                  { required: true, message: 'Please enter your GST number!' },
+                  { pattern: /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, message: 'Please enter a valid GST number!' }
+                ]}
+              >
+                <Input placeholder="22AAAAA0000A1Z5" />
+              </Form.Item>
+
+              <Form.Item
+                label="Business Address"
+                name="businessAddress"
+                rules={[{ required: true, message: 'Please enter your business address!' }]}
+              >
+                <Input.TextArea 
+                  placeholder="Complete business address with pincode" 
+                  rows={3}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Business Phone"
+                name="businessPhone"
+                rules={[{ required: true, message: 'Please enter your business phone!' }]}
+              >
+                <Input 
+                  prefix={<PhoneOutlined />} 
+                  placeholder="Business phone number" 
+                />
+              </Form.Item>
+
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <Form.Item
+                  label="Business Type"
+                  name="businessType"
+                  style={{ flex: 1 }}
+                  rules={[{ required: true, message: 'Please select business type!' }]}
+                >
+                  <Select placeholder="Select business type">
+                    <Option value="printing_services">Printing Services</Option>
+                    <Option value="advertising_agency">Advertising Agency</Option>
+                    <Option value="design_studio">Design Studio</Option>
+                    <Option value="packaging_company">Packaging Company</Option>
+                    <Option value="retail_store">Retail Store</Option>
+                    <Option value="educational_institution">Educational Institution</Option>
+                    <Option value="corporate_office">Corporate Office</Option>
+                    <Option value="event_management">Event Management</Option>
+                    <Option value="other">Other</Option>
+                  </Select>
+                </Form.Item>
+
+                <Form.Item
+                  label="Year Established"
+                  name="yearEstablished"
+                  style={{ flex: 1 }}
+                  rules={[{ required: true, message: 'Please enter year established!' }]}
+                >
+                  <Input placeholder="2020" type="number" min="1900" max="2024" />
+                </Form.Item>
+              </div>
+
+              <Form.Item
+                label="Expected Monthly Volume (₹)"
+                name="expectedMonthlyVolume"
+                rules={[{ required: true, message: 'Please select expected monthly volume!' }]}
+              >
+                <Select placeholder="Select expected monthly purchase volume">
+                  <Option value="10000-25000">₹10,000 - ₹25,000</Option>
+                  <Option value="25000-50000">₹25,000 - ₹50,000</Option>
+                  <Option value="50000-100000">₹50,000 - ₹1,00,000</Option>
+                  <Option value="100000-250000">₹1,00,000 - ₹2,50,000</Option>
+                  <Option value="250000-500000">₹2,50,000 - ₹5,00,000</Option>
+                  <Option value="500000+">₹5,00,000+</Option>
+                </Select>
+              </Form.Item>
+            </div>
+          )}
+
           {/* Wholesale Customer Notice */}
           {customerType === 'wholesale' && (
             <Alert
@@ -229,8 +341,10 @@ const CustomerRegister = () => {
           block
           size="large"
           style={{ marginBottom: '20px' }}
+          loading={googleLoading}
+          onClick={handleGoogleSignIn}
         >
-          Sign up with Google
+          Continue with Google (Retail Only)
         </Button>
 
         <div style={{ textAlign: 'center' }}>

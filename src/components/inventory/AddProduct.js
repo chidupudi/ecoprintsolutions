@@ -240,10 +240,10 @@ const AddProduct = () => {
 
             {/* Additional Options */}
             <Col xs={24}>
-              <h3>Additional Options</h3>
+              <h3>Availability & Visibility</h3>
             </Col>
 
-            <Col xs={24} sm={12}>
+            <Col xs={24} sm={8}>
               <Form.Item
                 label="Product Status"
                 name="isActive"
@@ -254,6 +254,70 @@ const AddProduct = () => {
                   checkedChildren="Active" 
                   unCheckedChildren="Inactive" 
                 />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} sm={8}>
+              <Form.Item
+                label="Available for Retail Customers"
+                name="availableForRetail"
+                valuePropName="checked"
+                initialValue={true}
+                tooltip="Show this product to retail customers"
+              >
+                <Switch 
+                  checkedChildren="Yes" 
+                  unCheckedChildren="No" 
+                />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} sm={8}>
+              <Form.Item
+                label="Available for Wholesale Customers"
+                name="availableForWholesale"
+                valuePropName="checked"
+                initialValue={true}
+                tooltip="Show this product to wholesale customers"
+              >
+                <Switch 
+                  checkedChildren="Yes" 
+                  unCheckedChildren="No" 
+                />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} sm={12}>
+              <Form.Item
+                label="Minimum Order Quantity (MOQ)"
+                name="minOrderQuantity"
+                tooltip="Minimum quantity required per order (especially for wholesale)"
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  placeholder="1"
+                  min={1}
+                  initialValue={1}
+                />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} sm={12}>
+              <Form.Item
+                label="Unit of Measurement"
+                name="unit"
+                rules={[{ required: true, message: 'Please select unit!' }]}
+                initialValue="piece"
+              >
+                <Select placeholder="Select unit">
+                  <Option value="piece">Piece</Option>
+                  <Option value="set">Set</Option>
+                  <Option value="pack">Pack</Option>
+                  <Option value="box">Box</Option>
+                  <Option value="carton">Carton</Option>
+                  <Option value="kg">Kilogram</Option>
+                  <Option value="meter">Meter</Option>
+                </Select>
               </Form.Item>
             </Col>
 

@@ -38,23 +38,61 @@ const WholesaleApprovals = () => {
       setLoading(true);
       
       // Load all wholesale customers (pending, approved, rejected)
-      const allWholesale = await dbService.queryDocuments('users', [
-        { field: 'customerType', operator: '==', value: 'wholesale' }
-      ], 'createdAt', 'desc');
+      // Try multiple approaches to fetch wholesale users
+      let allWholesale = [];
       
-      console.log('All wholesale requests:', allWholesale);
+      try {
+        // First try: customerType = 'wholesale'
+        allWholesale = await dbService.queryDocuments('users', [
+          { field: 'customerType', operator: '==', value: 'wholesale' }
+        ], 'createdAt', 'desc');
+        console.log('Found wholesale users by customerType:', allWholesale);
+      } catch (error) {
+        console.error('Error fetching by customerType:', error);
+      }
+      
+      // If no results, try role-based query
+      if (allWholesale.length === 0) {
+        try {
+          allWholesale = await dbService.queryDocuments('users', [
+            { field: 'role', operator: '==', value: 'customer_wholesale' }
+          ], 'createdAt', 'desc');
+          console.log('Found wholesale users by role:', allWholesale);
+        } catch (error) {
+          console.error('Error fetching by role:', error);
+        }
+      }
+      
+      // If still no results, get all users and filter
+      if (allWholesale.length === 0) {
+        try {
+          const allUsers = await dbService.getAll('users', 'createdAt', 'desc');
+          allWholesale = allUsers.filter(user => 
+            user.customerType === 'wholesale' || 
+            user.role === 'customer_wholesale' ||
+            (user.businessName && user.gstNumber) // Check for wholesale-specific fields
+          );
+          console.log('All users:', allUsers);
+          console.log('Filtered wholesale users:', allWholesale);
+        } catch (error) {
+          console.error('Error fetching all users:', error);
+        }
+      }
       
       const pending = allWholesale.filter(user => 
         user.approvalStatus === 'pending' || 
-        (!user.approvalStatus && user.role === 'customer_wholesale')
+        (!user.approvalStatus && (user.role === 'customer_wholesale' || user.customerType === 'wholesale'))
       );
       
       setPendingApprovals(pending);
       setAllRequests(allWholesale);
       
+      console.log('Final wholesale requests:', allWholesale);
+      console.log('Pending approvals:', pending);
+      
     } catch (error) {
       console.error('Error loading wholesale requests:', error);
-      message.error('Failed to load wholesale requests');
+      message.error('Failed to load wholesale requests: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -161,11 +199,11 @@ const WholesaleApprovals = () => {
       key: 'business',
       render: (_, record) => (
         <div>
-          <Text>{record.businessName || record.wholesaleDetails?.businessName || 'Not provided'}</Text>
+          <Text>{record.businessName || 'Not provided'}</Text>
           <br />
-          {record.wholesaleDetails?.gstNumber && (
+          {record.gstNumber && (
             <Text type="secondary" style={{ fontSize: '12px' }}>
-              GST: {record.wholesaleDetails.gstNumber}
+              GST: {record.gstNumber}
             </Text>
           )}
         </div>
@@ -431,19 +469,25 @@ const WholesaleApprovals = () => {
 
             <Descriptions title="Business Information" bordered column={2} style={{ marginBottom: 24 }}>
               <Descriptions.Item label="Business Name">
-                {selectedUser.businessName || selectedUser.wholesaleDetails?.businessName || 'Not provided'}
+                {selectedUser.businessName || 'Not provided'}
               </Descriptions.Item>
               <Descriptions.Item label="Business Type">
-                {selectedUser.wholesaleDetails?.businessType?.replace('_', ' ').toUpperCase() || 'Not specified'}
+                {selectedUser.businessType?.replace('_', ' ').toUpperCase() || 'Not specified'}
               </Descriptions.Item>
               <Descriptions.Item label="GST Number">
-                {selectedUser.wholesaleDetails?.gstNumber || 'Not provided'}
+                {selectedUser.gstNumber || 'Not provided'}
               </Descriptions.Item>
-              <Descriptions.Item label="Monthly Volume">
-                {selectedUser.wholesaleDetails?.estimatedMonthlyVolume || 'Not specified'}
+              <Descriptions.Item label="Business Phone">
+                {selectedUser.businessPhone || 'Not provided'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Year Established">
+                {selectedUser.yearEstablished || 'Not specified'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Expected Monthly Volume">
+                {selectedUser.expectedMonthlyVolume || 'Not specified'}
               </Descriptions.Item>
               <Descriptions.Item label="Business Address" span={2}>
-                {selectedUser.wholesaleDetails?.businessAddress || selectedUser.address || 'Not provided'}
+                {selectedUser.businessAddress || 'Not provided'}
               </Descriptions.Item>
             </Descriptions>
 

@@ -5,7 +5,7 @@ import {
   Spin, Empty, Space, Typography, Slider, Checkbox 
 } from 'antd';
 import { 
-  ShoppingCartOutlined, SearchOutlined, FilterOutlined,
+  ShoppingCartOutlined, FilterOutlined,
   PrinterOutlined, AppstoreOutlined, UnorderedListOutlined 
 } from '@ant-design/icons';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -64,14 +64,25 @@ const ProductsPage = () => {
 
   useEffect(() => {
     filterProducts();
-  }, [products, filters]);
+  }, [products, filters]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const productData = await dbService.queryDocuments('products', [
-        { field: 'isActive', operator: '==', value: true }
-      ]);
+      // Load all active products
+      let productData = [];
+      
+      try {
+        productData = await dbService.queryDocuments('products', [
+          { field: 'isActive', operator: '==', value: true }
+        ]);
+      } catch (error) {
+        // If query fails, try to get all products and filter
+        console.log('Query failed, trying to get all products:', error);
+        const allProducts = await dbService.getAll('products');
+        productData = allProducts.filter(product => product.isActive !== false);
+      }
+      
       console.log('Loaded products:', productData);
       setProducts(productData);
     } catch (error) {
@@ -83,13 +94,34 @@ const ProductsPage = () => {
 
   const loadCategories = async () => {
     try {
-      const categoryData = await dbService.queryDocuments('categories', [
-        { field: 'isActive', operator: '==', value: true }
-      ]);
+      let categoryData = [];
+      
+      try {
+        categoryData = await dbService.queryDocuments('categories', [
+          { field: 'isActive', operator: '==', value: true }
+        ]);
+      } catch (error) {
+        // If categories collection doesn't exist, create default categories
+        console.log('Categories query failed, using default categories:', error);
+        categoryData = [
+          { id: 'cartridges', name: 'Cartridges' },
+          { id: 'inks', name: 'Inks' },
+          { id: 'drums', name: 'Drums' },
+          { id: 'toners', name: 'Toners' }
+        ];
+      }
+      
       console.log('Loaded categories:', categoryData);
       setCategories(categoryData);
     } catch (error) {
       console.error('Error loading categories:', error);
+      // Set default categories as fallback
+      setCategories([
+        { id: 'cartridges', name: 'Cartridges' },
+        { id: 'inks', name: 'Inks' },
+        { id: 'drums', name: 'Drums' },
+        { id: 'toners', name: 'Toners' }
+      ]);
     }
   };
 
@@ -110,15 +142,22 @@ const ProductsPage = () => {
     // Category filter
     if (filters.category !== 'all') {
       filtered = filtered.filter(product => {
-        // Try exact match first
+        // Try exact match first (category ID)
         if (product.category === filters.category) return true;
         
         // Try to find category by name
         const categoryObj = categories.find(cat => cat.id === filters.category);
         if (categoryObj && product.category === categoryObj.name) return true;
         
-        // Try case-insensitive match
+        // Try case-insensitive match for category name
         if (product.category?.toLowerCase() === filters.category?.toLowerCase()) return true;
+        
+        // Try matching product name or description for category
+        const categoryName = filters.category.toLowerCase();
+        if (product.name?.toLowerCase().includes(categoryName) || 
+            product.description?.toLowerCase().includes(categoryName)) {
+          return true;
+        }
         
         return false;
       });
